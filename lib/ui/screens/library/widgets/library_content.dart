@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../theme/theme.dart';
 import '../../../widgets/song/song_tile.dart';
 import '../view_model/library_view_model.dart';
+import '../../../states/async_value.dart';
 
 class LibraryContent extends StatelessWidget {
   const LibraryContent({super.key});
@@ -20,18 +21,34 @@ class LibraryContent extends StatelessWidget {
           SizedBox(height: 16),
           Text("Library", style: AppTextStyles.heading),
           SizedBox(height: 50),
-      
+          
           Expanded(
-            child: ListView.builder(
-              itemCount: mv.songs.length,
-              itemBuilder: (context, index) => SongTile(
-                song: mv.songs[index],
-                isPlaying: mv.isSongPlaying(mv.songs[index]) ,
-                onTap: () {
-                  mv.start(mv.songs[index]);
-                },
-              ),
-            ),
+            child: switch (mv.songs.status) {
+              AsyncStatus.loading => Center(
+                  child: CircularProgressIndicator(),
+                ),
+              AsyncStatus.error => Center(
+                  child: Text(
+                    mv.songs.errorMessage ?? "An error occurred",
+                    style: TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+              AsyncStatus.data => ListView.builder(
+                  itemCount: mv.songs.value?.length ?? 0,
+                  itemBuilder: (context, index) {
+                    final song = mv.songs.value![index];
+                    return SongTile(
+                      song: song,
+                      isPlaying: mv.isSongPlaying(song),
+                      onTap: () {
+                        mv.start(song);
+                      },
+                    );
+                  },
+                ),
+            },
           ),
         ],
       ),
